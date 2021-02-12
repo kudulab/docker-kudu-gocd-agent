@@ -118,6 +118,8 @@ if [ "$1" = "${AGENT_WORK_DIR}/bin/go-agent" ]; then
     try cp -rfv "/go-agent/config/agent-logback-include.xml" "${AGENT_WORK_DIR}/config/agent-logback-include.xml"
   fi
 
+  touch "${AGENT_WORK_DIR}/config/autoregister.properties"
+  chown go:go "${AGENT_WORK_DIR}/config/autoregister.properties"
   setup_autoregister_properties_file "${AGENT_WORK_DIR}/config/autoregister.properties"
 
   # assuming a small agent fleet, poll more regularly for work
