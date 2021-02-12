@@ -5,8 +5,9 @@ set -eo pipefail
 GOCD_HOME=/home/go
 AGENT_WORK_DIR="/go"
 
-function read_secret_or_die {
+function read_secret {
   local vault_key=$1
+  local required=${2:-true}
 
   if [ -z "${SECRET_STORE}" ]; then
     echo "Secret store is not selected. Can't obtain secret: ${vault_key}" >&2
@@ -24,7 +25,9 @@ function read_secret_or_die {
     vault kv get --field=value secret/${VAULT_SECRET_STORE_PATH}/${vault_key}
     if [ $? != 0 ]; then
       echo "Failed reading from vault: ${vault_key}" >&2
-      exit 1
+      if [[ $required == "true" ]]; then
+        exit 1;
+      fi
     else
       echo "Successfully read from vault: ${vault_key}" >&2
     fi
@@ -37,7 +40,9 @@ function read_secret_or_die {
     aws ssm get-parameter --with-decryption --region $AWS_REGION --name /${AWS_SECRET_STORE_PATH}/${vault_key} | jq -r ".Parameter.Value"
     if [ $? != 0 ]; then
       echo "Failed reading from aws: /${AWS_SECRET_STORE_PATH}/${vault_key}" >&2
-      exit 1
+      if [[ $required == "true" ]]; then
+        exit 1;
+      fi
     else
       echo "Successfully read from aws: /${AWS_SECRET_STORE_PATH}/${vault_key}" >&2
     fi
@@ -45,8 +50,14 @@ function read_secret_or_die {
     echo "Invalid or unsupported secret store: ${SECRET_STORE}" >&2
     exit 1
   fi
+}
 
+function read_required_secret {
+  read_secret $1 true
+}
 
+function read_optional_secret {
+  read_secret $1 false
 }
 
 if [[ "${!GOCD_SKIP_SECRETS[@]}" ]]; then
@@ -56,11 +67,11 @@ fi
 if [ -z "$AGENT_AUTO_REGISTER_KEY" ]; then
   echo "AGENT_AUTO_REGISTER_KEY is not set but is needed for agent to autoregister. Falling back to secret store." >&2
   # the variables exported here are not visible in services' run files
-  AGENT_AUTO_REGISTER_KEY=$(read_secret_or_die "autoregistration_key")
+  AGENT_AUTO_REGISTER_KEY=$(read_required_secret "autoregistration_key")
 fi
 if [ -z "$GOCD_SSH_KEY" ]; then
   echo "GOCD_SSH_KEY is not set. It is needed for go agent to use git over ssh. Falling back to secret store." >&2
-  GOCD_SSH_KEY=$(read_secret_or_die "go_id_rsa")
+  GOCD_SSH_KEY=$(read_optional_secret "go_id_rsa")
 fi
 
 echo "export AGENT_AUTO_REGISTER_KEY=${AGENT_AUTO_REGISTER_KEY}" >${GOCD_HOME}/gocd_AGENT_AUTO_REGISTER_KEY
