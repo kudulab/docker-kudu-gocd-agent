@@ -28,8 +28,8 @@ if [[ ! -f $SECRET_OPS_TAR_FILE ]];then
 fi
 source $SECRET_OPS_FILE
 
-image_name="kudulab/gocd-agent"
-image_registry="dockerhub"
+image_name="${DOCKER_IMAGE_NAME:-kudulab/gocd-agent}"
+image_registry="${DOCKER_REGISTRY:-dockerhub}"
 image_dir="./image"
 imagerc_filename="imagerc"
 
@@ -68,13 +68,15 @@ case "${command}" in
       releaser::verify_release_ready
       ;;
   build_local)
+      gocd_version="${2:-v20.10.0}"
+      docker_build_options="--build-arg gocd_version=${gocd_version}"
       image_tag=$(git rev-parse HEAD)
       # build image and push to a test registry
       docker_ops::docker_build "${image_dir}" "${imagerc_filename}" "${image_name}" "${image_tag}" "${image_registry}"
       ;;
   build)
       docker_login ${image_registry}
-      ./tasks build_local
+      ./tasks build_local $2
       docker_ops::push "${image_dir}" "${imagerc_filename}"
       ;;
   *)
