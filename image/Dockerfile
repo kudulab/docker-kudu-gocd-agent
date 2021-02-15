@@ -10,7 +10,7 @@ RUN apt-get update &&\
   apt-get -y autoremove && apt-get -y autoclean && apt-get -y clean &&\
   rm -rf /tmp/* /var/tmp/* && rm -rf /var/lib/apt/lists/*
 
-RUN git clone --branch 0.4.0 https://github.com/kudulab/ops-base.git /tmp/ops-base &&\
+RUN git clone --branch 0.5.0 https://github.com/kudulab/ops-base.git /tmp/ops-base &&\
    cd /tmp/ops-base/setup &&\
    ./install.sh &&\
    cd / && rm -rf /python-ops
