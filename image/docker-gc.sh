@@ -1,5 +1,25 @@
 #!/bin/bash
 
-docker run --rm --privileged -v /var/run/docker.sock:/var/run/docker.sock -v /etc:/etc:ro -e MINIMUM_IMAGES_TO_SAVE=3 -e FORCE_IMAGE_REMOVAL=1 spotify/docker-gc
+# Cleans up space on the GoCD agents, skips dojo images
+# Depends on
+# - Docker CLI
+# - jq
 
-docker system prune -af --volumes
+DELETE_IMAGES_OLDER_THAN_DAYS="${DELETE_IMAGES_OLDER_THAN_DAYS:-180}"
+
+image_ids=$(docker images -qa)
+for image_id in $image_ids
+do
+  if docker inspect $image_id | jq -r .[0].RepoTags | grep -q dojo; then
+    echo "$image_id is a dojo image, not deleting"
+  else
+    date_created=$(docker inspect $image_id | jq -r .[0].Created | awk -F'T' '{print $1}')
+    days_since_created=$((($(date +%s)-$(date +%s --date "$date_created"))/(3600*24)))
+    if [[ $days_since_created -gt $DELETE_IMAGES_OLDER_THAN_DAYS ]]; then
+      echo "$image_id to be deleted"
+      docker rmi -f $image_id
+    else
+      echo "$image_id will not be deleted"
+    fi
+  fi
+done
