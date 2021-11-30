@@ -23,3 +23,5 @@ do
     fi
   fi
 done
+
+docker volume prune -f
