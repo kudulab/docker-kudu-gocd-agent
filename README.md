@@ -116,6 +116,10 @@ The GoCD agent will store all configuration, logs and perform builds in `/godata
 docker run -v /path/to/godata:/godata -v /path/to/home-dir:/home/go kudulab/gocd-agent
 ```
 
+## Cleaning old images
+
+The agent's space might fill up quick. There's a cron job that removes non-dojo images older than `DELETE_IMAGES_OLDER_THAN_DAYS`, by default 180 days.
+
 ## Tweaking JVM options (memory, heap etc)
 
 JVM options can be tweaked using the environment variable `GOCD_AGENT_JVM_OPTS`.
