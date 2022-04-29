@@ -14,6 +14,9 @@ do
     echo "$image_id is a dojo image, not deleting"
   else
     date_created=$(docker inspect $image_id | jq -r .[0].Created | awk -F'T' '{print $1}')
+    if [[ $date_created == "null" ]]; then
+	continue
+    fi
     days_since_created=$((($(date +%s)-$(date +%s --date "$date_created"))/(3600*24)))
     if [[ $days_since_created -gt $DELETE_IMAGES_OLDER_THAN_DAYS ]]; then
       echo "$image_id to be deleted"
